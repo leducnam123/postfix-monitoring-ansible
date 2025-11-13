@@ -1,0 +1,11 @@
+---
+- name: Ensure Postfix is installed
+  yum:
+    name: postfix
+    state: present
+
+- name: Ensure Postfix service is running
+  service:
+    name: postfix
+    state: started
+    enabled: yes

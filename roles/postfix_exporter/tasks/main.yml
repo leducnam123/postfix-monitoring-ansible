@@ -1,0 +1,64 @@
+---
+- name: Install dependencies
+  become: yes
+  yum:
+    name: python3
+    state: present
+
+- name: Copy exporter script
+  become: yes
+  copy:
+    src: postfix_exporter.sh
+    dest: /usr/local/bin/postfix_exporter.sh
+    mode: '0755'
+
+- name: Create Python exporter server
+  become: yes
+  copy:
+    dest: /usr/local/bin/postfix_exporter_server.py
+    mode: '0755'
+    content: |
+      #!/usr/bin/env python3
+      from http.server import BaseHTTPRequestHandler, HTTPServer
+      import subprocess
+
+      class MetricsHandler(BaseHTTPRequestHandler):
+          def do_GET(self):
+              if self.path == '/metrics':
+                  output = subprocess.getoutput("/usr/local/bin/postfix_exporter.sh")
+                  self.send_response(200)
+                  self.send_header('Content-type', 'text/plain; charset=utf-8')
+                  self.end_headers()
+                  self.wfile.write(output.encode())
+              else:
+                  self.send_response(404)
+                  self.end_headers()
+
+      if __name__ == '__main__':
+          server = HTTPServer(('0.0.0.0', 9154), MetricsHandler)
+          print("Starting Postfix exporter on port 9154")
+          server.serve_forever()
+
+- name: Create systemd service
+  become: yes
+  copy:
+    dest: /etc/systemd/system/postfix_exporter.service
+    content: |
+      [Unit]
+      Description=Postfix Queue Exporter (Python)
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/bin/python3 /usr/local/bin/postfix_exporter_server.py
+      Restart=always
+      User=root
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd and start exporter
+  become: yes
+  shell: |
+    systemctl daemon-reload
+    systemctl enable postfix_exporter
+    systemctl restart postfix_exporter

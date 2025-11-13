@@ -1,0 +1,19 @@
+# Postfix Monitoring Ansible Demo
+
+## Description
+This demo sets up:
+- Postfix on Ubuntu 22.04
+- Bash-based Postfix queue exporter for Prometheus
+- Sample Prometheus config for scraping metrics
+
+## How to run
+1. Update `inventory/hosts.ini` with your server IP and user.
+2. Run playbook:
+   ```bash
+   ansible-playbook -i inventory/hosts.ini playbook.yml
+3. Check exporter service: systemctl status postfix_exporter
+4. Add prometheus_sample.yml to your Prometheus server to scrape metrics.
+
+## Notes
+
+The exporter script runs as systemd service. Metrics are exposed in Prometheus format.

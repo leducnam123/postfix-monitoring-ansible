@@ -1,0 +1,10 @@
+---
+- name: Setup Postfix monitoring stack (all-in-one)
+  hosts: mailserver
+  become: yes
+
+  roles:
+    - postfix
+    - postfix_exporter
+    - prometheus
+    - grafana
